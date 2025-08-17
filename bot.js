@@ -7,6 +7,9 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;");
 }
 
+// =======================
+// 🔐 Konfigurasi Bot
+// =======================
 const BOT_TOKEN = '8006865528:AAE0vGWwNX1TpNKkRqShTKCygbq1RkPLm64';
 const DANA_QR_LINK = 'https://files.catbox.moe/mxovdq.jpg';
 const DANA_NUMBER = '087883536039';
@@ -16,8 +19,15 @@ const REMINDER_TIMEOUT = 12 * 60 * 60 * 1000;
 const PAYMENT_TIMEOUT = 24 * 60 * 60 * 1000;
 
 const bot = new Telegraf(BOT_TOKEN);
+
+// =======================
+// Data pengguna
+// =======================
 const users = {};
 
+// =======================
+// Fungsi safe send
+// =======================
 async function safeSendMessage(chatId, text, extra = {}) {
   try {
     await bot.telegram.sendMessage(chatId, text, extra);
@@ -44,6 +54,9 @@ async function safeSendPhoto(chatId, photo, extra = {}) {
   }
 }
 
+// =======================
+// Daftar Paket
+// =======================
 const paketList = {
   lokal: { name: "Lokal", harga: 2000, channel: 'https://t.me/+P1hlp7dNmdgyOTVl' },
   cina: { name: "Cina", harga: 2000, channel: 'https://t.me/+eXWEgvPsFpY2MGI1' },
@@ -61,6 +74,9 @@ const paketList = {
   }
 };
 
+// =======================
+// Menu Utama
+// =======================
 async function showMainMenu(ctx) {
   const chatId = ctx.chat.id;
   await safeSendMessage(chatId,
@@ -68,19 +84,27 @@ async function showMainMenu(ctx) {
     `📦 Lokal - Rp2.000\n📦 Cina - Rp2.000\n📦 Asia - Rp2.000\n` +
     `📦 Amerika - Rp2.000\n📦 Yaoi - Rp2.000\n📦 Paket Lengkap Semua Channel - Rp6.000`,
     {
-      reply_markup: Markup.inlineKeyboard([
-        [Markup.button.callback('📦 Lokal', 'lokal')],
-        [Markup.button.callback('📦 Cina', 'cina')],
-        [Markup.button.callback('📦 Asia', 'asia')],
-        [Markup.button.callback('📦 Amerika', 'amerika')],
-        [Markup.button.callback('📦 Yaoi', 'yaoi')],
-        [Markup.button.callback('📦 Semua Channel - Rp6.000', 'lengkap')]
-      ])
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '📦 Lokal', callback_data: 'lokal' }],
+          [{ text: '📦 Cina', callback_data: 'cina' }],
+          [{ text: '📦 Asia', callback_data: 'asia' }],
+          [{ text: '📦 Amerika', callback_data: 'amerika' }],
+          [{ text: '📦 Yaoi', callback_data: 'yaoi' }],
+          [{ text: '📦 Semua Channel - Rp6.000', callback_data: 'lengkap' }]
+        ]
+      }
     });
 }
 
+// =======================
+// /start
+// =======================
 bot.start(showMainMenu);
 
+// =======================
+// Pilih Paket
+// =======================
 bot.action(/^(lokal|cina|asia|amerika|yaoi|lengkap)$/, async (ctx) => {
   const paketId = ctx.match[0];
   const userId = ctx.from.id;
@@ -146,6 +170,9 @@ bot.action(/^(lokal|cina|asia|amerika|yaoi|lengkap)$/, async (ctx) => {
   await ctx.answerCbQuery();
 });
 
+// =======================
+// Bukti pembayaran (photo)
+// =======================
 bot.on('photo', async (ctx) => {
   const userId = ctx.from.id;
 
@@ -182,7 +209,7 @@ bot.on('photo', async (ctx) => {
     await bot.telegram.sendPhoto(ADMIN_ID, photo, {
       caption,
       parse_mode: 'Markdown',
-      reply_markup: buttons // ✅ FIXED HERE
+      reply_markup: buttons.reply_markup
     });
 
     await sendVerifiedLinks(userId, pkg);
@@ -191,6 +218,9 @@ bot.on('photo', async (ctx) => {
   }
 });
 
+// =======================
+// Kirim link ke user setelah verifikasi
+// =======================
 async function sendVerifiedLinks(userId, pkg) {
   try {
     if (Array.isArray(pkg.channel)) {
@@ -207,6 +237,9 @@ async function sendVerifiedLinks(userId, pkg) {
   }
 }
 
+// =======================
+// Callback Actions
+// =======================
 bot.action('continue_payment', async (ctx) => {
   const userId = ctx.from.id;
   const order = users[userId];
@@ -247,6 +280,9 @@ bot.action('back_to_menu', async (ctx) => {
   await ctx.answerCbQuery();
 });
 
+// =======================
+// Command Tambahan
+// =======================
 bot.command('help', async (ctx) => {
   await safeSendMessage(ctx.chat.id,
     `ℹ️ *Panduan Penggunaan Bot:*\n\n` +
@@ -281,6 +317,9 @@ bot.on('callback_query', async (ctx) => {
   }
 });
 
+// =======================
+// Error Global
+// =======================
 bot.catch((err, ctx) => {
   const chatId = ctx.chat?.id || ctx.callbackQuery?.from?.id;
   if (err?.response?.error_code === 403 && chatId) {
@@ -291,6 +330,9 @@ bot.catch((err, ctx) => {
   }
 });
 
+// =======================
+// Jalankan Bot
+// =======================
 bot.launch().then(() => {
   console.log('Bot sudah berjalan...');
 });
